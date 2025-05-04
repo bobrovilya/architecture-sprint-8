@@ -3,7 +3,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/reports-realm
+          issuer-uri: http://keycloak:8080/realms/reports-realm
       client:
         registration:
           keycloak:
@@ -14,7 +14,7 @@ spring:
             scope: openid,profile,email
         provider:
           keycloak:
-            issuer-uri: http://localhost:8080/realms/reports-realm
+            issuer-uri: http://keycloak:8080/realms/reports-realm
             user-name-attribute: preferred_username
 server:
   port: 8000

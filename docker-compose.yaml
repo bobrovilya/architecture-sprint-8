@@ -51,17 +51,16 @@ services:
     networks:
       - network
 
-  # backend:
-  #   build:
-  #     context: ./API
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "8000:8080"
-  #   depends_on:
-  #     - keycloak
-  #     - frontend
-  #   networks:
-  #     - network
+  backend:
+    build:
+      context: ./API
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - keycloak
+    networks:
+      - network
 
 networks:
   network:

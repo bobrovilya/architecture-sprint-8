@@ -1,5 +1,6 @@
 package ru.practicum.backend
 
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.Customizer
@@ -9,7 +10,14 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.CorsConfigurer
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
+import org.springframework.security.oauth2.core.OAuth2Error
+import org.springframework.security.oauth2.core.OAuth2TokenValidator
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.jwt.JwtDecoder
+import org.springframework.security.oauth2.jwt.JwtValidators
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter
 import org.springframework.security.web.SecurityFilterChain
@@ -71,5 +79,39 @@ class SecurityConfig {
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", configuration)
         return source
+    }
+
+    @Bean
+    fun jwtDecoder(): JwtDecoder {
+        val jwkSetUri = "http://keycloak:8080/realms/reports-realm/protocol/openid-connect/certs"
+        val decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build()
+
+        val customIssuerValidator = OAuth2TokenValidator<Jwt> { jwt ->
+            log.info("Validating issuer = ${jwt.issuer}")
+            if (jwt.issuer.toString() == "http://localhost:8080/realms/reports-realm") {
+                log.info("jwt.issuer.toString() == http://localhost:8080/realms/reports-realm")
+                OAuth2TokenValidatorResult.success()
+            } else {
+                OAuth2TokenValidatorResult.failure(
+                    OAuth2Error(
+                        "invalid_issuer",
+                        "The Issuer \"${jwt.issuer}\" does not match the expected issuer",
+                        null
+                    )
+                )
+            }
+        }
+
+        // Combine the custom issuer validator with default validators
+        val validators = listOf(
+            customIssuerValidator,
+        )
+        decoder.setJwtValidator(DelegatingOAuth2TokenValidator(validators))
+
+        return decoder
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(SecurityConfig::class.java)
     }
 }
